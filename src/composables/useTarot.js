@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { RU } from '../data/interpretationsRu.js'
-import { cardImageUrl, cardSourceUrl } from '../data/cardImages.js'
+import { deckImages } from '../data/cardImages.js'
 
 const API_URL = 'https://tarotapi.dev/api/v1/cards'
 
@@ -20,17 +20,13 @@ function parseShort(short) {
 
 function buildFallbackCards() {
   return Object.keys(RU).map((short) => {
-    const ru = RU[short]
     const meta = parseShort(short)
     return {
-      name: ru.ru,
+      name: RU[short].ru,
       name_short: short,
       type: meta.type,
       suit: meta.suit,
-      value_int: meta.value_int,
-      meaning_up: ru.up,
-      meaning_rev: ru.rev,
-      desc: ''
+      value_int: meta.value_int
     }
   })
 }
@@ -39,8 +35,7 @@ function enrich(card) {
   return {
     ...card,
     ru: RU[card.name_short] || null,
-    image: cardImageUrl(card, 600),
-    source: cardSourceUrl(card)
+    images: deckImages(card, 600)
   }
 }
 
@@ -62,7 +57,7 @@ export function useTarot() {
       cards.value = list.map(enrich)
       offline.value = false
     } catch (e) {
-      // API недоступно — работаем на локальных данных, картинки тянем с Wikimedia.
+      // API недоступно — карты строим из локальных данных, картинки тянем с Wikimedia.
       cards.value = buildFallbackCards().map(enrich)
       offline.value = true
       error.value = String(e.message || e)
@@ -71,16 +66,15 @@ export function useTarot() {
     }
   }
 
-  // Случайная карта, по возможности отличная от предыдущей.
+  // Случайная карта (по возможности не повторяющая предыдущую) + случайное положение.
   function drawRandom(excludeShort = null) {
     const pool = cards.value
     if (!pool.length) return null
-    if (pool.length === 1) return pool[0]
     let pick
     do {
       pick = pool[Math.floor(Math.random() * pool.length)]
-    } while (pick.name_short === excludeShort)
-    return pick
+    } while (pool.length > 1 && pick.name_short === excludeShort)
+    return { card: pick, reversed: Math.random() < 0.5 }
   }
 
   const ready = computed(() => !loading.value && cards.value.length > 0)

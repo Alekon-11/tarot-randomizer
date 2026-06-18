@@ -1,53 +1,51 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { readCard } from '../data/decks.js'
 
 const props = defineProps({
   card: { type: Object, required: true },
-  deck: { type: Object, required: true }
+  deck: { type: Object, required: true },
+  reversed: { type: Boolean, default: false }
 })
 
 const imgError = ref(false)
-
-// Сброс ошибки картинки при смене карты.
 watch(
-  () => props.card?.name_short,
+  () => [props.card?.name_short, props.deck?.id],
   () => {
     imgError.value = false
   }
 )
 
-const reading = computed(() => props.deck.build(props.card))
+const reading = computed(() => readCard(props.deck, props.card, props.reversed))
+const img = computed(() => props.card.images[props.deck.image])
 
 const arcana = computed(() =>
   props.card.type === 'major' ? 'Старший Аркан' : suitLabel(props.card.suit)
 )
-
 function suitLabel(suit) {
-  return (
-    {
-      wands: 'Жезлы · Огонь',
-      cups: 'Кубки · Вода',
-      swords: 'Мечи · Воздух',
-      pentacles: 'Пентакли · Земля'
-    }[suit] || 'Младший Аркан'
-  )
+  return {
+    wands: 'Жезлы · Огонь',
+    cups: 'Кубки · Вода',
+    swords: 'Мечи · Воздух',
+    pentacles: 'Пентакли · Земля'
+  }[suit] || 'Младший Аркан'
 }
 </script>
 
 <template>
-  <article class="card-display">
-    <div class="card-visual" :style="{ '--accent': deck.accent }">
-      <div class="card-frame" :class="{ reversed: deck.reversed }">
+  <article class="card-display" :style="{ '--accent': deck.accent }">
+    <div class="card-visual">
+      <div class="card-frame" :class="{ reversed }">
         <img
           v-if="!imgError"
-          :src="card.image"
-          :alt="card.name"
+          :src="img.url"
+          :alt="reading.title"
           class="card-img"
           loading="eager"
           @error="imgError = true"
         />
         <div v-else class="card-fallback">
-          <span class="card-fallback__symbol">🔮</span>
+          <span class="card-fallback__symbol">{{ deck.icon }}</span>
           <span class="card-fallback__name">{{ reading.title }}</span>
           <span class="card-fallback__hint">изображение недоступно</span>
         </div>
@@ -55,7 +53,7 @@ function suitLabel(suit) {
       <a
         v-if="!imgError"
         class="card-source"
-        :href="card.source"
+        :href="img.source"
         target="_blank"
         rel="noopener"
         title="Источник изображения на Wikimedia Commons"
@@ -65,7 +63,9 @@ function suitLabel(suit) {
     <div class="card-info">
       <div class="card-tags">
         <span class="tag tag--arcana">{{ arcana }}</span>
-        <span v-if="deck.reversed" class="tag tag--rev">перевёрнутая</span>
+        <span class="tag" :class="reversed ? 'tag--rev' : 'tag--up'">
+          {{ reversed ? '↧ Перевёрнутая' : '↥ Прямая' }}
+        </span>
       </div>
 
       <h2 class="card-title">{{ reading.title }}</h2>
@@ -75,10 +75,12 @@ function suitLabel(suit) {
         <li v-for="kw in reading.keywords" :key="kw" class="keyword">{{ kw }}</li>
       </ul>
 
-      <div class="blocks">
-        <div v-for="(b, i) in reading.blocks" :key="i" class="block">
-          <h3 class="block__label">{{ b.label }}</h3>
-          <p class="block__text">{{ b.text }}</p>
+      <div class="spheres">
+        <div v-for="(s, i) in reading.spheres" :key="i" class="sphere">
+          <h3 class="sphere__label">
+            <span class="sphere__icon">{{ s.icon }}</span>{{ s.label }}
+          </h3>
+          <p class="sphere__text">{{ s.text }}</p>
         </div>
       </div>
     </div>
@@ -101,7 +103,6 @@ function suitLabel(suit) {
   align-items: center;
   gap: 0.6rem;
 }
-
 .card-frame {
   position: relative;
   width: 100%;
@@ -113,19 +114,15 @@ function suitLabel(suit) {
     0 0 0 2px var(--accent),
     0 18px 50px -12px rgba(0, 0, 0, 0.8),
     0 0 60px -20px var(--accent);
-  transition: transform 0.5s ease;
+  transition: transform 0.6s ease;
 }
-.card-frame.reversed {
-  transform: rotate(180deg);
-}
-
+.card-frame.reversed { transform: rotate(180deg); }
 .card-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-
 .card-fallback {
   width: 100%;
   height: 100%;
@@ -138,33 +135,17 @@ function suitLabel(suit) {
   text-align: center;
   background: radial-gradient(circle at 50% 30%, #2a2150, #140f2a);
 }
-.card-fallback__symbol {
-  font-size: 3rem;
-}
-.card-fallback__name {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #fff;
-}
-.card-fallback__hint {
-  font-size: 0.8rem;
-  color: #8c83b0;
-}
-
+.card-fallback__symbol { font-size: 3rem; }
+.card-fallback__name { font-size: 1.2rem; font-weight: 600; color: #fff; }
+.card-fallback__hint { font-size: 0.8rem; color: #8c83b0; }
 .card-source {
   font-size: 0.72rem;
   color: #7a7298;
   text-decoration: none;
-  letter-spacing: 0.02em;
 }
-.card-source:hover {
-  color: var(--accent);
-}
+.card-source:hover { color: var(--accent); }
 
-.card-info {
-  min-width: 0;
-}
-
+.card-info { min-width: 0; }
 .card-tags {
   display: flex;
   gap: 0.5rem;
@@ -173,20 +154,26 @@ function suitLabel(suit) {
 }
 .tag {
   font-size: 0.74rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   padding: 0.3rem 0.7rem;
   border-radius: 999px;
+  border: 1px solid transparent;
 }
 .tag--arcana {
-  background: rgba(179, 136, 255, 0.14);
-  color: #c9b3ff;
-  border: 1px solid rgba(179, 136, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  color: #cfc7e8;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.tag--up {
+  background: rgba(120, 220, 160, 0.12);
+  color: #93e6b8;
+  border-color: rgba(120, 220, 160, 0.3);
 }
 .tag--rev {
   background: rgba(255, 110, 156, 0.14);
   color: #ff9cbb;
-  border: 1px solid rgba(255, 110, 156, 0.35);
+  border-color: rgba(255, 110, 156, 0.35);
 }
 
 .card-title {
@@ -197,7 +184,7 @@ function suitLabel(suit) {
   color: #fff;
 }
 .card-subtitle {
-  margin: 0.3rem 0 1.3rem;
+  margin: 0.3rem 0 1.2rem;
   color: #9a90bd;
   font-style: italic;
 }
@@ -219,34 +206,37 @@ function suitLabel(suit) {
   color: #ddd4f5;
 }
 
-.blocks {
+.spheres {
+  display: grid;
+  gap: 0.9rem;
+}
+.sphere {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+.sphere__label {
   display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-}
-.block__label {
-  margin: 0 0 0.3rem;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--accent, #b388ff);
+  color: var(--accent);
 }
-.block__text {
+.sphere__icon { font-size: 1rem; }
+.sphere__text {
   margin: 0;
-  line-height: 1.65;
-  color: #d7d0ea;
-  font-size: 1.02rem;
+  line-height: 1.6;
+  color: #ded7ef;
+  font-size: 1rem;
 }
 
 @media (max-width: 720px) {
-  .card-display {
-    grid-template-columns: 1fr;
-    gap: 1.6rem;
-  }
-  .card-visual {
-    position: static;
-    max-width: 280px;
-    margin: 0 auto;
-  }
+  .card-display { grid-template-columns: 1fr; gap: 1.6rem; }
+  .card-visual { position: static; max-width: 280px; margin: 0 auto; }
 }
 </style>

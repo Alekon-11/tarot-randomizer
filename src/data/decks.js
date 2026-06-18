@@ -1,56 +1,56 @@
-// «Колоды» — это традиции прочтения одних и тех же карт Райдера–Уэйта.
-// Каждая колода по-своему интерпретирует выпавшую карту.
-// build(card) получает карту с полями API (meaning_up, meaning_rev, desc, ...)
-// и присоединённой русской трактовкой card.ru ({ ru, up, rev, kw }).
+// Две колоды. Карты в каждой могут выпадать прямыми и перевёрнутыми.
+// Трактовки — на русском, по нескольким сферам.
+import { CLASSIC } from './classicRu.js'
+import { SHADOW } from './shadowRu.js'
 
 export const DECKS = [
   {
-    id: 'modern',
-    name: 'Современное Таро',
-    subtitle: 'Ключи и смысл · на русском',
-    icon: '🌙',
-    accent: '#b388ff',
-    reversed: false,
-    build: (card) => ({
-      title: card.ru?.up || card.meaning_up,
-      keywords: card.ru?.kw || [],
-      blocks: [
-        { label: 'Что говорит карта', text: card.ru?.up || card.meaning_up }
-      ]
-    })
-  },
-  {
-    id: 'waite',
-    name: 'Уэйт · Классика',
-    subtitle: 'Оригинальный текст А. Э. Уэйта (англ.)',
-    icon: '📜',
+    id: 'classic',
+    name: 'Классическая колода',
+    subtitle: 'Райдер–Уэйт · трактовки по сферам жизни',
+    icon: '🌞',
     accent: '#d4af37',
-    reversed: false,
-    build: (card) => ({
-      title: card.name,
-      keywords: [],
-      blocks: [
-        { label: 'Upright meaning', text: card.meaning_up },
-        { label: 'Reversed meaning', text: card.meaning_rev },
-        { label: 'Symbolism', text: card.desc }
-      ].filter((b) => b.text)
-    })
+    image: 'rws', // источник изображения
+    data: CLASSIC,
+    spheres: [
+      { key: 'love', label: 'Любовь и отношения', icon: '💞' },
+      { key: 'money', label: 'Финансы и работа', icon: '💰' },
+      { key: 'events', label: 'События по карте', icon: '🗓️' },
+      { key: 'advice', label: 'Совет карты', icon: '🧭' },
+      { key: 'magic', label: 'Магическая диагностика', icon: '🔮' }
+    ]
   },
   {
     id: 'shadow',
-    name: 'Теневое Таро',
-    subtitle: 'Перевёрнутые значения · на русском',
-    icon: '🜃',
-    accent: '#ff6e9c',
-    reversed: true,
-    build: (card) => ({
-      title: card.ru?.ru || card.name,
-      keywords: card.ru?.kw || [],
-      blocks: [
-        { label: 'Теневой аспект (перевёрнутая)', text: card.ru?.rev || card.meaning_rev }
-      ]
-    })
+    name: 'Теневая колода',
+    subtitle: 'Sola-Busca, 1491 · работа с тенью',
+    icon: '🌑',
+    accent: '#b56cff',
+    image: 'sola',
+    data: SHADOW,
+    spheres: [
+      { key: 'relations', label: 'Преграды в отношениях', icon: '⛓️' },
+      { key: 'shadow', label: 'Моя тень', icon: '🌑' },
+      { key: 'fears', label: 'Скрытые страхи', icon: '🕷️' },
+      { key: 'lesson', label: 'Теневой урок', icon: '🗝️' },
+      { key: 'advice', label: 'Как прожить тень', icon: '🕯️' }
+    ]
   }
 ]
 
-export const DEFAULT_DECK_ID = 'modern'
+// Сборка трактовки для конкретной карты в конкретном положении.
+export function readCard(deck, card, reversed) {
+  const orient = reversed ? 'rev' : 'up'
+  const set = deck.data?.[card.name_short]?.[orient] || {}
+  return {
+    title: card.ru?.ru || card.name,
+    keywords: card.ru?.kw || [],
+    spheres: deck.spheres.map((s) => ({
+      label: s.label,
+      icon: s.icon,
+      text: set[s.key] || '—'
+    }))
+  }
+}
+
+export const DEFAULT_DECK_ID = 'classic'
