@@ -1,7 +1,8 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useTarot } from './composables/useTarot.js'
 import { useSettings } from './composables/useSettings.js'
+import { useAudio } from './composables/useAudio.js'
 import ReadingView from './components/ReadingView.vue'
 import DailyCard from './components/DailyCard.vue'
 import Encyclopedia from './components/Encyclopedia.vue'
@@ -9,7 +10,8 @@ import MatrixView from './components/MatrixView.vue'
 import SettingsMenu from './components/SettingsBar.vue'
 
 const { loading, load } = useTarot()
-const { apply } = useSettings()
+const { sound, apply } = useSettings()
+const { startMusic, stopMusic } = useAudio()
 
 const TABS = [
   { id: 'draw', label: '🃏 Расклад' },
@@ -19,9 +21,20 @@ const TABS = [
 ]
 const activeView = ref('draw')
 
+// Фоновая музыка следует за настройкой звука.
+watch(sound, (on) => {
+  if (on) startMusic()
+  else stopMusic()
+})
+
 onMounted(() => {
   load()
   apply() // применить сохранённую тему/рубашку
+  // если звук был включён ранее — стартуем музыку после первого жеста (autoplay-политика)
+  if (sound.value) {
+    const kick = () => { startMusic(); window.removeEventListener('pointerdown', kick) }
+    window.addEventListener('pointerdown', kick, { once: true })
+  }
 })
 </script>
 
@@ -66,6 +79,10 @@ onMounted(() => {
         Данные карт — <a href="https://tarotapi.dev" target="_blank" rel="noopener">tarotapi.dev</a>.
         Изображения — <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a>,
         public domain: классическая колода — Райдер–Уэйт–Смит, теневая — Sola-Busca (1491).
+      </p>
+      <p class="footer__music">
+        Музыка: «Crypto» — Kevin MacLeod (<a href="https://incompetech.com" target="_blank" rel="noopener">incompetech.com</a>),
+        лицензия <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.
       </p>
       <p class="footer__disclaimer">Приложение создано для развлечения.</p>
     </footer>
@@ -142,6 +159,7 @@ onMounted(() => {
   line-height: 1.6;
 }
 .footer a { color: #a48fe0; }
+.footer__music { margin-top: 0.6rem; font-size: 0.76rem; opacity: 0.8; }
 .footer__disclaimer { margin-top: 0.3rem; opacity: 0.7; }
 
 .stars {

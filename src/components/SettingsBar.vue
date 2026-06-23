@@ -42,7 +42,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
           <span class="toggle__txt">{{ sound ? 'вкл' : 'выкл' }}</span>
         </button>
       </div>
-      <p class="menu__hint">Звук перетасовки карт</p>
+      <p class="menu__hint">Фоновая музыка и звук тасовки</p>
 
       <div class="menu__sep"></div>
 

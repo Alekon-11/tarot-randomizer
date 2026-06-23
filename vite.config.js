@@ -48,6 +48,17 @@ export default defineConfig({
             urlPattern: ({ url }) => url.hostname === 'tarotapi.dev',
             handler: 'StaleWhileRevalidate',
             options: { cacheName: 'tarot-api', cacheableResponse: { statuses: [0, 200] } }
+          },
+          {
+            // фоновая музыка — кэшируем после первого воспроизведения (для офлайна)
+            urlPattern: ({ request, url }) => request.destination === 'audio' || url.pathname.endsWith('.mp3'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'audio',
+              expiration: { maxEntries: 4, maxAgeSeconds: 60 * 60 * 24 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+              rangeRequests: true
+            }
           }
         ]
       },

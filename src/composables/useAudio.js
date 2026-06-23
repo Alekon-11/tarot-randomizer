@@ -1,7 +1,53 @@
-// Звук без внешних файлов — синтез через Web Audio API (дружелюбно к офлайну/PWA).
-// Остался только звук перетасовки карт (фоновый дрон убран как неприятный).
-let ctx = null
+// Звук: фоновая мелодия (готовый трек) + звук перетасовки (синтез Web Audio).
+import ambientUrl from '../assets/ambient.mp3'
 
+// ---- Фоновая музыка ----
+let music = null
+let fadeTimer = null
+const TARGET_VOLUME = 0.22 // приглушённо
+
+function ensureMusic() {
+  if (!music) {
+    music = new Audio(ambientUrl)
+    music.loop = true
+    music.preload = 'none'
+    music.volume = 0
+  }
+  return music
+}
+
+function fadeTo(target, ms = 1200) {
+  const m = ensureMusic()
+  if (fadeTimer) clearInterval(fadeTimer)
+  const steps = 24
+  const step = (target - m.volume) / steps
+  let i = 0
+  fadeTimer = setInterval(() => {
+    i++
+    m.volume = Math.min(1, Math.max(0, m.volume + step))
+    if (i >= steps) {
+      clearInterval(fadeTimer)
+      fadeTimer = null
+      m.volume = target
+      if (target === 0) m.pause()
+    }
+  }, ms / steps)
+}
+
+function startMusic() {
+  const m = ensureMusic()
+  const p = m.play()
+  if (p && p.catch) p.catch(() => {}) // autoplay может быть заблокирован до жеста
+  fadeTo(TARGET_VOLUME)
+}
+
+function stopMusic() {
+  if (!music) return
+  fadeTo(0)
+}
+
+// ---- Звук перетасовки ----
+let ctx = null
 function ensureCtx() {
   if (!ctx) {
     const AC = window.AudioContext || window.webkitAudioContext
@@ -12,12 +58,10 @@ function ensureCtx() {
   return ctx
 }
 
-// Звук перетасовки — короткие шумовые всплески, фильтрованные в «шшш».
 function playShuffle() {
   const c = ensureCtx()
   if (!c) return
-  const bursts = 3
-  for (let b = 0; b < bursts; b++) {
+  for (let b = 0; b < 3; b++) {
     const dur = 0.18
     const buffer = c.createBuffer(1, c.sampleRate * dur, c.sampleRate)
     const data = buffer.getChannelData(0)
@@ -42,5 +86,5 @@ function playShuffle() {
 }
 
 export function useAudio() {
-  return { playShuffle }
+  return { startMusic, stopMusic, playShuffle }
 }
