@@ -8,6 +8,7 @@ import DailyCard from './components/DailyCard.vue'
 import Encyclopedia from './components/Encyclopedia.vue'
 import MatrixView from './components/MatrixView.vue'
 import SettingsMenu from './components/SettingsBar.vue'
+import logoUrl from './assets/logo.png'
 
 const { loading, load } = useTarot()
 const { sound, apply } = useSettings()
@@ -43,8 +44,7 @@ onMounted(() => {
     <div class="stars" aria-hidden="true"></div>
 
     <header class="hero">
-      <div class="hero__badge">🔮 Таро</div>
-      <h1 class="hero__title">Arcana 78</h1>
+      <h1 class="hero__brand"><img :src="logoUrl" class="hero__logo" alt="Arcana 78 · Таро" /></h1>
       <p class="hero__lead">
         Вытяните случайную карту, изучите все 78 арканов или рассчитайте матрицу судьбы.
         Карты могут выпадать прямыми и перевёрнутыми — трактовки даны по нескольким сферам.
@@ -97,28 +97,14 @@ onMounted(() => {
   padding: 2.5rem 1.5rem 4rem;
 }
 
-.hero { text-align: center; margin-bottom: 1.8rem; }
-.hero__badge {
-  display: inline-block;
-  font-size: 0.8rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #c9b3ff;
-  border: 1px solid rgba(179, 136, 255, 0.35);
-  border-radius: 999px;
-  padding: 0.35rem 1rem;
-  margin-bottom: 1rem;
-}
-.hero__title {
-  font-family: 'Cinzel', 'Georgia', serif;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  font-size: clamp(2.4rem, 7vw, 4.2rem);
-  margin: 0 0 0.6rem;
-  background: var(--grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.hero { text-align: center; margin-bottom: 1.4rem; }
+.hero__brand { margin: 0; line-height: 0; }
+.hero__logo {
+  display: block;
+  width: clamp(220px, 40vw, 330px);
+  height: auto;
+  margin: 0 auto;
+  filter: drop-shadow(0 8px 26px rgba(255, 200, 120, 0.18));
 }
 
 .hero__lead { max-width: 620px; margin: 0 auto; color: #aaa0cc; line-height: 1.6; }

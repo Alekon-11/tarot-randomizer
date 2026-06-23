@@ -1,11 +1,3 @@
-@font-face {
-  font-family: 'Cinzel';
-  src: url('../assets/fonts/cinzel-600.woff2') format('woff2');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
   color-scheme: dark;
 
