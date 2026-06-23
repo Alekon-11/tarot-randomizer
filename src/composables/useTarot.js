@@ -39,13 +39,16 @@ function enrich(card) {
   }
 }
 
-export function useTarot() {
-  const cards = ref([])
-  const loading = ref(true)
-  const offline = ref(false)
-  const error = ref('')
+// --- Singleton-состояние: одна загруженная колода на всё приложение ---
+const cards = ref([])
+const loading = ref(true)
+const offline = ref(false)
+const error = ref('')
+let loadPromise = null
 
-  async function load() {
+async function load() {
+  if (loadPromise) return loadPromise
+  loadPromise = (async () => {
     loading.value = true
     error.value = ''
     try {
@@ -57,37 +60,54 @@ export function useTarot() {
       cards.value = list.map(enrich)
       offline.value = false
     } catch (e) {
-      // API недоступно — карты строим из локальных данных, картинки тянем с Wikimedia.
       cards.value = buildFallbackCards().map(enrich)
       offline.value = true
       error.value = String(e.message || e)
     } finally {
       loading.value = false
     }
+  })()
+  return loadPromise
+}
+
+// Перетасовать колоду (Fisher–Yates).
+function shuffle() {
+  const arr = cards.value.slice()
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
+  cards.value = arr
+}
 
-  // Перетасовать колоду (Fisher–Yates) — порядок меняется, ощущение ритуала.
-  function shuffle() {
-    const arr = cards.value.slice()
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[arr[i], arr[j]] = [arr[j], arr[i]]
-    }
-    cards.value = arr
+// Случайная карта (по возможности не из списка исключений) + случайное положение.
+function drawRandom(exclude = []) {
+  const pool = cards.value
+  if (!pool.length) return null
+  const ex = Array.isArray(exclude) ? exclude : [exclude]
+  let pick
+  let guard = 0
+  do {
+    pick = pool[Math.floor(Math.random() * pool.length)]
+  } while (ex.includes(pick.name_short) && pool.length > ex.length && guard++ < 50)
+  return { card: pick, reversed: Math.random() < 0.5 }
+}
+
+// Вытянуть N различных карт со случайными положениями.
+function drawSpread(n) {
+  const used = []
+  const result = []
+  for (let i = 0; i < n; i++) {
+    const r = drawRandom(used)
+    if (!r) break
+    used.push(r.card.name_short)
+    result.push(r)
   }
+  return result
+}
 
-  // Случайная карта (по возможности не повторяющая предыдущую) + случайное положение.
-  function drawRandom(excludeShort = null) {
-    const pool = cards.value
-    if (!pool.length) return null
-    let pick
-    do {
-      pick = pool[Math.floor(Math.random() * pool.length)]
-    } while (pool.length > 1 && pick.name_short === excludeShort)
-    return { card: pick, reversed: Math.random() < 0.5 }
-  }
+const ready = computed(() => !loading.value && cards.value.length > 0)
 
-  const ready = computed(() => !loading.value && cards.value.length > 0)
-
-  return { cards, loading, offline, error, ready, load, drawRandom, shuffle }
+export function useTarot() {
+  return { cards, loading, offline, error, ready, load, drawRandom, drawSpread, shuffle }
 }

@@ -1,11 +1,9 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { DECKS, readCard } from '../data/decks.js'
+import { useTarot } from '../composables/useTarot.js'
 
-const props = defineProps({
-  cards: { type: Array, required: true }
-})
-
+const { cards } = useTarot()
 const classicDeck = DECKS.find((d) => d.id === 'classic')
 const imgError = ref(false)
 
@@ -20,9 +18,9 @@ function hashStr(s) {
 }
 
 const card = computed(() => {
-  if (!props.cards.length) return null
-  const idx = hashStr(dateKey) % props.cards.length
-  return props.cards[idx]
+  if (!cards.value.length) return null
+  const idx = hashStr(dateKey) % cards.value.length
+  return cards.value[idx]
 })
 
 watch(card, () => { imgError.value = false })
