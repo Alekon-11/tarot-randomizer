@@ -1,4 +1,4 @@
-// Сборка изображения карты на canvas и шеринг/скачивание.
+// Сборка изображения карты на canvas и копирование в буфер обмена.
 
 function loadImage(url) {
   return new Promise((resolve) => {
@@ -60,7 +60,7 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
   return y
 }
 
-export async function shareCard({ imageUrl, title, subtitle, keywords = [], sphereLabel, sphereText, reversed, deckName }) {
+export async function copyCardImage({ imageUrl, title, subtitle, keywords = [], sphereLabel, sphereText, reversed, deckName }) {
   const W = 720
   const H = 1100
   const canvas = document.createElement('canvas')
@@ -152,19 +152,18 @@ export async function shareCard({ imageUrl, title, subtitle, keywords = [], sphe
 
   const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'))
   if (!blob) throw new Error('toBlob failed')
-  const fileName = `taro-${(title || 'card').replace(/\s+/g, '-').toLowerCase()}.png`
-  const file = new File([blob], fileName, { type: 'image/png' })
 
-  // мобильный шеринг, если доступен
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+  // основной путь — копирование изображения в буфер обмена
+  if (navigator.clipboard && window.ClipboardItem) {
     try {
-      await navigator.share({ files: [file], title })
-      return 'shared'
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+      return 'copied'
     } catch {
-      /* пользователь отменил — упадём в скачивание */
+      /* буфер недоступен (нет HTTPS/разрешения) — упадём в скачивание */
     }
   }
-  // иначе — скачивание
+  // запасной вариант — скачивание файла
+  const fileName = `taro-${(title || 'card').replace(/\s+/g, '-').toLowerCase()}.png`
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

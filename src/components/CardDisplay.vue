@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { readCard } from '../data/decks.js'
-import { shareCard } from '../utils/shareCard.js'
+import { copyCardImage } from '../utils/shareCard.js'
 
 const props = defineProps({
   card: { type: Object, required: true },
@@ -10,7 +10,7 @@ const props = defineProps({
 })
 
 const imgError = ref(false)
-const shareState = ref('') // '', 'busy', 'ok'
+const copyState = ref('') // '', 'busy', 'copied', 'saved', 'err'
 
 watch(
   () => [props.card?.name_short, props.deck?.id],
@@ -42,12 +42,12 @@ function suitLabel(suit) {
   }[suit] || 'Младший Аркан'
 }
 
-async function onShare() {
-  if (shareState.value === 'busy') return
-  shareState.value = 'busy'
+async function onCopy() {
+  if (copyState.value === 'busy') return
+  copyState.value = 'busy'
   try {
     const first = reading.value.spheres[0] || {}
-    await shareCard({
+    const res = await copyCardImage({
       imageUrl: img.value.url,
       title: reading.value.title,
       subtitle: props.card.name,
@@ -57,10 +57,11 @@ async function onShare() {
       reversed: props.reversed,
       deckName: props.deck.name
     })
-    shareState.value = 'ok'
-    setTimeout(() => (shareState.value = ''), 2200)
+    copyState.value = res === 'copied' ? 'copied' : 'saved'
+    setTimeout(() => (copyState.value = ''), 2400)
   } catch {
-    shareState.value = ''
+    copyState.value = 'err'
+    setTimeout(() => (copyState.value = ''), 2400)
   }
 }
 </script>
@@ -112,10 +113,12 @@ async function onShare() {
       <h2 class="card-title">{{ reading.title }}</h2>
       <p class="card-subtitle">{{ card.name }}</p>
 
-      <button class="share-btn" type="button" :disabled="shareState === 'busy'" @click="onShare">
-        <span v-if="shareState === 'ok'">✓ Готово</span>
-        <span v-else-if="shareState === 'busy'">Готовим…</span>
-        <span v-else>📤 Поделиться картой</span>
+      <button class="share-btn" type="button" :disabled="copyState === 'busy'" @click="onCopy">
+        <span v-if="copyState === 'copied'">✓ Скопировано в буфер</span>
+        <span v-else-if="copyState === 'saved'">✓ Сохранено</span>
+        <span v-else-if="copyState === 'err'">Не удалось</span>
+        <span v-else-if="copyState === 'busy'">Готовим…</span>
+        <span v-else>📋 Скопировать карту</span>
       </button>
 
       <ul v-if="reading.keywords.length" class="keywords">

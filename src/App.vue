@@ -1,17 +1,15 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useTarot } from './composables/useTarot.js'
 import { useSettings } from './composables/useSettings.js'
-import { useAudio } from './composables/useAudio.js'
 import ReadingView from './components/ReadingView.vue'
 import DailyCard from './components/DailyCard.vue'
 import Encyclopedia from './components/Encyclopedia.vue'
 import MatrixView from './components/MatrixView.vue'
-import SettingsBar from './components/SettingsBar.vue'
+import SettingsMenu from './components/SettingsBar.vue'
 
 const { loading, load } = useTarot()
-const { sound, apply } = useSettings()
-const { startAmbient, stopAmbient } = useAudio()
+const { apply } = useSettings()
 
 const TABS = [
   { id: 'draw', label: '🃏 Расклад' },
@@ -21,20 +19,9 @@ const TABS = [
 ]
 const activeView = ref('draw')
 
-// Эмбиент включается/выключается вместе с настройкой звука.
-watch(sound, (on) => {
-  if (on) startAmbient()
-  else stopAmbient()
-})
-
 onMounted(() => {
   load()
   apply() // применить сохранённую тему/рубашку
-  // если звук был включён ранее — стартуем эмбиент после первого жеста (autoplay-политика)
-  if (sound.value) {
-    const kick = () => { startAmbient(); window.removeEventListener('pointerdown', kick) }
-    window.addEventListener('pointerdown', kick, { once: true })
-  }
 })
 </script>
 
@@ -51,7 +38,7 @@ onMounted(() => {
       </p>
     </header>
 
-    <div class="toolbar"><SettingsBar /></div>
+    <SettingsMenu />
 
     <nav class="nav">
       <button
@@ -115,7 +102,6 @@ onMounted(() => {
   color: transparent;
 }
 
-.toolbar { display: flex; justify-content: center; margin-bottom: 1.4rem; position: relative; z-index: 1; }
 .hero__lead { max-width: 620px; margin: 0 auto; color: #aaa0cc; line-height: 1.6; }
 
 .nav {
