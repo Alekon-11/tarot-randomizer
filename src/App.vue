@@ -1,12 +1,17 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useTarot } from './composables/useTarot.js'
+import { useSettings } from './composables/useSettings.js'
+import { useAudio } from './composables/useAudio.js'
 import ReadingView from './components/ReadingView.vue'
 import DailyCard from './components/DailyCard.vue'
 import Encyclopedia from './components/Encyclopedia.vue'
 import MatrixView from './components/MatrixView.vue'
+import SettingsBar from './components/SettingsBar.vue'
 
 const { loading, load } = useTarot()
+const { sound, apply } = useSettings()
+const { startAmbient, stopAmbient } = useAudio()
 
 const TABS = [
   { id: 'draw', label: '🃏 Расклад' },
@@ -16,7 +21,21 @@ const TABS = [
 ]
 const activeView = ref('draw')
 
-onMounted(load)
+// Эмбиент включается/выключается вместе с настройкой звука.
+watch(sound, (on) => {
+  if (on) startAmbient()
+  else stopAmbient()
+})
+
+onMounted(() => {
+  load()
+  apply() // применить сохранённую тему/рубашку
+  // если звук был включён ранее — стартуем эмбиент после первого жеста (autoplay-политика)
+  if (sound.value) {
+    const kick = () => { startAmbient(); window.removeEventListener('pointerdown', kick) }
+    window.addEventListener('pointerdown', kick, { once: true })
+  }
+})
 </script>
 
 <template>
@@ -31,6 +50,8 @@ onMounted(load)
         Карты могут выпадать прямыми и перевёрнутыми — трактовки даны по нескольким сферам.
       </p>
     </header>
+
+    <div class="toolbar"><SettingsBar /></div>
 
     <nav class="nav">
       <button
@@ -88,11 +109,13 @@ onMounted(load)
   font-family: 'Georgia', serif;
   font-size: clamp(2rem, 6vw, 3.4rem);
   margin: 0 0 0.8rem;
-  background: linear-gradient(120deg, #fff 10%, #c9b3ff 55%, #ffd479 95%);
+  background: var(--grad);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
+
+.toolbar { display: flex; justify-content: center; margin-bottom: 1.4rem; position: relative; z-index: 1; }
 .hero__lead { max-width: 620px; margin: 0 auto; color: #aaa0cc; line-height: 1.6; }
 
 .nav {
@@ -117,7 +140,7 @@ onMounted(load)
 .nav__tab:hover { color: #fff; border-color: rgba(179, 136, 255, 0.4); }
 .nav__tab.active {
   color: #1a1030;
-  background: linear-gradient(120deg, #ffd479, #b388ff);
+  background: var(--grad);
   border-color: transparent;
   font-weight: 600;
 }

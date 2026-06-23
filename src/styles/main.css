@@ -1,37 +1,63 @@
 :root {
   color-scheme: dark;
+
+  /* Акценты и градиенты (переопределяются темами) */
+  --accent-1: #b388ff;
+  --accent-2: #ffd479;
+  --grad: linear-gradient(120deg, var(--accent-2), var(--accent-1));
+  --bg:
+    radial-gradient(ellipse at 50% -10%, #2a1f50 0%, transparent 55%),
+    radial-gradient(ellipse at 100% 100%, #1d2a4a 0%, transparent 50%),
+    linear-gradient(160deg, #100a22 0%, #0a0718 100%);
+
+  /* Рубашка карт */
+  --card-back: repeating-linear-gradient(45deg, #241b45 0 10px, #2c2152 10px 20px);
 }
 
-* {
-  box-sizing: border-box;
+/* ---- Темы ---- */
+:root[data-theme='emerald'] {
+  --accent-1: #54d6a6;
+  --accent-2: #ffe08a;
+  --bg:
+    radial-gradient(ellipse at 50% -10%, #123f33 0%, transparent 55%),
+    radial-gradient(ellipse at 100% 100%, #0f2a33 0%, transparent 50%),
+    linear-gradient(160deg, #08160f 0%, #06120c 100%);
+}
+:root[data-theme='crimson'] {
+  --accent-1: #ff6e8e;
+  --accent-2: #ffc06a;
+  --bg:
+    radial-gradient(ellipse at 50% -10%, #4a1530 0%, transparent 55%),
+    radial-gradient(ellipse at 100% 100%, #3a1020 0%, transparent 50%),
+    linear-gradient(160deg, #1a0712 0%, #120610 100%);
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
+/* ---- Рубашки ---- */
+:root[data-back='dots'] {
+  --card-back: radial-gradient(circle at 30% 30%, rgba(201, 179, 255, 0.55) 2px, transparent 3px) 0 0 / 22px 22px,
+    #241b45;
 }
+:root[data-back='rays'] {
+  --card-back: repeating-conic-gradient(from 0deg at 50% 50%, #2a1f50 0deg 12deg, #34276a 12deg 24deg);
+}
+
+/* Общий класс рубашки */
+.deck-back {
+  background: var(--card-back);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
 
 body {
   min-height: 100vh;
   font-family: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
   color: #e8e3f5;
-  background:
-    radial-gradient(ellipse at 50% -10%, #2a1f50 0%, transparent 55%),
-    radial-gradient(ellipse at 100% 100%, #1d2a4a 0%, transparent 50%),
-    linear-gradient(160deg, #100a22 0%, #0a0718 100%);
+  background: var(--bg);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
 }
 
-a {
-  color: inherit;
-}
-
-button {
-  font-family: inherit;
-}
-
-::selection {
-  background: rgba(179, 136, 255, 0.4);
-}
+a { color: inherit; }
+button { font-family: inherit; }
+::selection { background: rgba(179, 136, 255, 0.4); }

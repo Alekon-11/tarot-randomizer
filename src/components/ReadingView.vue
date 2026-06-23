@@ -2,14 +2,22 @@
 import { computed, ref } from 'vue'
 import { useTarot } from '../composables/useTarot.js'
 import { useHistory } from '../composables/useHistory.js'
+import { useAudio } from '../composables/useAudio.js'
+import { useSettings } from '../composables/useSettings.js'
 import { DECKS, DEFAULT_DECK_ID, readCard } from '../data/decks.js'
 import { CLASSIC } from '../data/classicRu.js'
 import CardDisplay from './CardDisplay.vue'
+import CardModal from './CardModal.vue'
 
 const { loading, offline, ready, drawRandom, drawSpread, shuffle } = useTarot()
 const { entries, add, clear } = useHistory()
+const { playShuffle } = useAudio()
+const { sound } = useSettings()
 
 const classicDeck = DECKS.find((d) => d.id === 'classic')
+
+// карта, открытая в модальном окне (из расклада на 3 карты)
+const modalItem = ref(null) // { card, reversed, label }
 
 const SPREADS = {
   ppf: {
@@ -103,6 +111,7 @@ function draw() {
 function doShuffle() {
   if (!ready.value || drawing.value || shuffling.value) return
   shuffling.value = true
+  if (sound.value) playShuffle()
   reset()
   setTimeout(() => {
     shuffle()
@@ -119,6 +128,10 @@ function setMode(m) {
 }
 
 const hasResult = computed(() => current.value || spread.value.length)
+
+function openSpreadCard(item, label) {
+  modalItem.value = { card: item.card, reversed: item.reversed, label }
+}
 </script>
 
 <template>
@@ -209,7 +222,14 @@ const hasResult = computed(() => current.value || spread.value.length)
           />
           <!-- Три карты -->
           <div v-else-if="mode === 'three' && spread.length" class="spread" :key="'s' + flipKey">
-            <div v-for="(item, i) in spread" :key="i" class="spread-cell">
+            <button
+              v-for="(item, i) in spread"
+              :key="i"
+              class="spread-cell"
+              type="button"
+              :title="'Подробнее: ' + (item.card.ru?.ru || item.card.name)"
+              @click="openSpreadCard(item, positions[i].label)"
+            >
               <span class="spread-cell__pos">{{ positions[i].label }}</span>
               <div class="spread-cell__frame" :class="{ reversed: item.reversed }">
                 <img :src="item.card.images.rws.url" :alt="item.card.ru?.ru" class="spread-cell__img" />
@@ -222,15 +242,24 @@ const hasResult = computed(() => current.value || spread.value.length)
                 <li v-for="kw in (item.card.ru?.kw || [])" :key="kw">{{ kw }}</li>
               </ul>
               <p class="spread-cell__text">{{ cellSphereText(item, positions[i].sphere) }}</p>
-            </div>
+              <span class="spread-cell__more">Подробнее →</span>
+            </button>
           </div>
           <!-- Пусто -->
           <div v-else class="placeholder" key="placeholder">
-            <div class="placeholder__card"><div class="placeholder__back">✦</div></div>
+            <button
+              class="placeholder__card"
+              type="button"
+              :disabled="!ready || drawing || shuffling"
+              title="Нажмите, чтобы вытянуть карту"
+              @click="draw"
+            >
+              <span class="placeholder__back">✦</span>
+            </button>
             <p class="placeholder__text">
               {{ justShuffled
-                ? 'Колода перетасована. Нажмите кнопку, чтобы вытянуть карту.'
-                : 'Карта ждёт. Нажмите кнопку, чтобы открыть её.' }}
+                ? 'Колода перетасована. Нажмите на карту или кнопку, чтобы вытянуть.'
+                : 'Нажмите на карту или кнопку, чтобы открыть её.' }}
             </p>
           </div>
         </Transition>
@@ -264,6 +293,15 @@ const hasResult = computed(() => current.value || spread.value.length)
         </template>
       </div>
     </section>
+
+    <CardModal
+      v-if="modalItem"
+      :card="modalItem.card"
+      deck-id="classic"
+      :reversed="modalItem.reversed"
+      :position-label="modalItem.label"
+      @close="modalItem = null"
+    />
   </div>
 </template>
 
@@ -355,7 +393,7 @@ const hasResult = computed(() => current.value || spread.value.length)
 .actions > .offline-note { flex-basis: 100%; text-align: center; }
 .draw-btn {
   font-size: 1.05rem; font-weight: 600; color: #1a1030;
-  background: linear-gradient(120deg, #ffd479, #b388ff);
+  background: var(--grad);
   border: none; border-radius: 999px; padding: 0.95rem 2.6rem; cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s;
   box-shadow: 0 10px 30px -10px rgba(179, 136, 255, 0.7);
@@ -387,6 +425,34 @@ const hasResult = computed(() => current.value || spread.value.length)
   flex-direction: column;
   align-items: center;
   text-align: center;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.spread-cell:hover .spread-cell__frame {
+  transform: translateY(-5px);
+  box-shadow: 0 0 0 1.5px var(--accent-2), 0 18px 40px -14px rgba(0, 0, 0, 0.85);
+}
+.spread-cell:hover .spread-cell__frame.reversed {
+  transform: translateY(-5px) rotate(180deg);
+}
+.spread-cell__more {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--accent-1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.spread-cell:hover .spread-cell__more { opacity: 1; }
+.spread-cell { animation: cellIn 0.5s ease both; }
+.spread-cell:nth-child(2) { animation-delay: 0.12s; }
+.spread-cell:nth-child(3) { animation-delay: 0.24s; }
+@keyframes cellIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .spread-cell__pos {
   font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase;
@@ -424,7 +490,7 @@ const hasResult = computed(() => current.value || spread.value.length)
 .shuffle-card {
   position: absolute; top: 30px; left: 50%; width: 130px; height: 222px; margin-left: -65px;
   border-radius: 12px;
-  background: repeating-linear-gradient(45deg, #2a1f50 0 9px, #34276a 9px 18px);
+  background: var(--card-back);
   border: 1.5px solid rgba(179, 136, 255, 0.5);
   box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.8);
   animation: shuffleMove 0.9s ease-in-out infinite;
@@ -447,18 +513,24 @@ const hasResult = computed(() => current.value || spread.value.length)
 .placeholder { display: flex; flex-direction: column; align-items: center; gap: 1.2rem; padding-top: 1rem; }
 .placeholder__card {
   width: 200px; aspect-ratio: 600 / 1024; border-radius: 16px;
-  background: repeating-linear-gradient(45deg, #241b45 0 10px, #2c2152 10px 20px);
+  background: var(--card-back);
   border: 2px solid rgba(179, 136, 255, 0.4); display: grid; place-items: center;
   box-shadow: 0 18px 50px -16px rgba(0, 0, 0, 0.8); animation: float 4s ease-in-out infinite;
+  cursor: pointer; padding: 0; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
+.placeholder__card:hover:not(:disabled) {
+  border-color: var(--accent-1);
+  box-shadow: 0 22px 60px -16px rgba(0, 0, 0, 0.85), 0 0 40px -12px var(--accent-1);
+}
+.placeholder__card:disabled { cursor: not-allowed; opacity: 0.7; }
 .placeholder__back { font-size: 3rem; color: rgba(201, 179, 255, 0.6); }
 .placeholder__text { color: #9a90bd; text-align: center; max-width: 320px; }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-.flip-enter-active { transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
-.flip-leave-active { transition: all 0.25s ease; }
-.flip-enter-from { opacity: 0; transform: rotateY(90deg) scale(0.92); }
-.flip-leave-to { opacity: 0; transform: scale(0.96); }
+/* Лёгкий fade на смене — сам 3D-переворот живёт внутри CardDisplay */
+.flip-enter-active { transition: opacity 0.4s ease; }
+.flip-leave-active { transition: opacity 0.2s ease; }
+.flip-enter-from, .flip-leave-to { opacity: 0; }
 
 /* История */
 .history { margin-top: 2.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.2rem; }
