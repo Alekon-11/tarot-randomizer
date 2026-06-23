@@ -44,7 +44,7 @@ onMounted(() => {
 
     <header class="hero">
       <div class="hero__badge">🔮 Таро</div>
-      <h1 class="hero__title">Рандомайзер карт Таро</h1>
+      <h1 class="hero__title">Arcana 78</h1>
       <p class="hero__lead">
         Вытяните случайную карту, изучите все 78 арканов или рассчитайте матрицу судьбы.
         Карты могут выпадать прямыми и перевёрнутыми — трактовки даны по нескольким сферам.
@@ -110,9 +110,11 @@ onMounted(() => {
   margin-bottom: 1rem;
 }
 .hero__title {
-  font-family: 'Georgia', serif;
-  font-size: clamp(2rem, 6vw, 3.4rem);
-  margin: 0 0 0.8rem;
+  font-family: 'Cinzel', 'Georgia', serif;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  font-size: clamp(2.4rem, 7vw, 4.2rem);
+  margin: 0 0 0.6rem;
   background: var(--grad);
   -webkit-background-clip: text;
   background-clip: text;

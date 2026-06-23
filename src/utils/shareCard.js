@@ -148,7 +148,7 @@ export async function copyCardImage({ imageUrl, title, subtitle, keywords = [], 
   ctx.textAlign = 'center'
   ctx.fillStyle = '#6f6790'
   ctx.font = '18px Segoe UI, sans-serif'
-  ctx.fillText('🔮 Таро · рандомайзер карт', W / 2, H - 40)
+  ctx.fillText('✦ Arcana 78 · Таро', W / 2, H - 40)
 
   const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'))
   if (!blob) throw new Error('toBlob failed')

@@ -46,14 +46,14 @@ async function onCopy() {
   if (copyState.value === 'busy') return
   copyState.value = 'busy'
   try {
-    const first = reading.value.spheres[0] || {}
+    // краткая общая трактовка (без привязки к конкретной сфере)
+    const general = props.reversed ? props.card.ru?.rev : props.card.ru?.up
     const res = await copyCardImage({
       imageUrl: img.value.url,
       title: reading.value.title,
       subtitle: props.card.name,
       keywords: reading.value.keywords,
-      sphereLabel: first.label,
-      sphereText: first.text,
+      sphereText: general,
       reversed: props.reversed,
       deckName: props.deck.name
     })

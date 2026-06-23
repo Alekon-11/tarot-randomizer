@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'Таро · Рандомайзер карт',
-        short_name: 'Таро',
+        name: 'Arcana 78 · Таро',
+        short_name: 'Arcana 78',
         description: 'Случайные карты Таро, расклады, карта дня и матрица судьбы.',
         lang: 'ru',
         theme_color: '#140d2c',
