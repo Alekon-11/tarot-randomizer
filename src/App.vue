@@ -104,7 +104,15 @@ onMounted(() => {
   width: clamp(220px, 40vw, 330px);
   height: auto;
   margin: 0 auto;
-  filter: drop-shadow(0 8px 26px rgba(255, 200, 120, 0.18));
+  filter: drop-shadow(0 0 30px rgba(255, 209, 138, 0.5));
+  animation: logoGlow 4.5s ease-in-out infinite;
+}
+@keyframes logoGlow {
+  0%, 100% { filter: drop-shadow(0 0 30px rgba(255, 209, 138, 0.5)); }
+  50% { filter: drop-shadow(0 0 90px rgba(255, 209, 138, 0.85)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__logo { animation: none; }
 }
 
 .hero__lead { max-width: 620px; margin: 0 auto; color: #aaa0cc; line-height: 1.6; }
