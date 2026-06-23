@@ -17,7 +17,8 @@ export const DECKS = [
       { key: 'money', label: 'Финансы и работа', icon: '💰' },
       { key: 'events', label: 'События по карте', icon: '🗓️' },
       { key: 'advice', label: 'Совет карты', icon: '🧭' },
-      { key: 'magic', label: 'Магическая диагностика', icon: '🔮' }
+      { key: 'magic', label: 'Магическая диагностика', icon: '🔮' },
+      { key: 'person', label: 'Личность и характер', icon: '🧬' }
     ]
   },
   {
@@ -33,7 +34,8 @@ export const DECKS = [
       { key: 'shadow', label: 'Моя тень', icon: '🌑' },
       { key: 'fears', label: 'Скрытые страхи', icon: '🕷️' },
       { key: 'lesson', label: 'Теневой урок', icon: '🗝️' },
-      { key: 'advice', label: 'Как прожить тень', icon: '🕯️' }
+      { key: 'advice', label: 'Как прожить тень', icon: '🕯️' },
+      { key: 'person', label: 'Психологический портрет', icon: '🎭' }
     ]
   }
 ]

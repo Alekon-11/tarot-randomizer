@@ -19,6 +19,19 @@ watch(
 const reading = computed(() => readCard(props.deck, props.card, props.reversed))
 const img = computed(() => props.card.images[props.deck.image])
 
+// Полупрозрачная палитра для тегов-ключей — в тон общей гамме.
+const KW_PALETTE = [
+  { bg: 'rgba(179, 136, 255, 0.14)', fg: '#cbb6ff', bd: 'rgba(179, 136, 255, 0.34)' },
+  { bg: 'rgba(255, 212, 121, 0.13)', fg: '#f4d58c', bd: 'rgba(255, 212, 121, 0.32)' },
+  { bg: 'rgba(255, 110, 156, 0.13)', fg: '#ff9cbb', bd: 'rgba(255, 110, 156, 0.32)' },
+  { bg: 'rgba(120, 220, 180, 0.12)', fg: '#9fe6c4', bd: 'rgba(120, 220, 180, 0.32)' },
+  { bg: 'rgba(125, 196, 255, 0.12)', fg: '#a8d4ff', bd: 'rgba(125, 196, 255, 0.32)' }
+]
+function kwStyle(i) {
+  const c = KW_PALETTE[i % KW_PALETTE.length]
+  return { background: c.bg, color: c.fg, borderColor: c.bd }
+}
+
 const arcana = computed(() =>
   props.card.type === 'major' ? 'Старший Аркан' : suitLabel(props.card.suit)
 )
@@ -72,7 +85,12 @@ function suitLabel(suit) {
       <p class="card-subtitle">{{ card.name }}</p>
 
       <ul v-if="reading.keywords.length" class="keywords">
-        <li v-for="kw in reading.keywords" :key="kw" class="keyword">{{ kw }}</li>
+        <li
+          v-for="(kw, i) in reading.keywords"
+          :key="kw"
+          class="keyword"
+          :style="kwStyle(i)"
+        >{{ kw }}</li>
       </ul>
 
       <div class="spheres">

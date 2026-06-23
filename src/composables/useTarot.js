@@ -66,6 +66,16 @@ export function useTarot() {
     }
   }
 
+  // Перетасовать колоду (Fisher–Yates) — порядок меняется, ощущение ритуала.
+  function shuffle() {
+    const arr = cards.value.slice()
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[arr[i], arr[j]] = [arr[j], arr[i]]
+    }
+    cards.value = arr
+  }
+
   // Случайная карта (по возможности не повторяющая предыдущую) + случайное положение.
   function drawRandom(excludeShort = null) {
     const pool = cards.value
@@ -79,5 +89,5 @@ export function useTarot() {
 
   const ready = computed(() => !loading.value && cards.value.length > 0)
 
-  return { cards, loading, offline, error, ready, load, drawRandom }
+  return { cards, loading, offline, error, ready, load, drawRandom, shuffle }
 }
