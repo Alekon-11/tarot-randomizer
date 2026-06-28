@@ -2,6 +2,8 @@
 // Трактовки — на русском, по нескольким сферам.
 import { CLASSIC } from './classicRu.js'
 import { SHADOW } from './shadowRu.js'
+import { FULL_CLASSIC } from './classicFullRu.js'
+import { FULL_SHADOW } from './shadowFullRu.js'
 
 export const DECKS = [
   {
@@ -12,6 +14,7 @@ export const DECKS = [
     accent: '#d4af37',
     image: 'rws', // источник изображения
     data: CLASSIC,
+    full: FULL_CLASSIC,
     spheres: [
       { key: 'love', label: 'Любовь и отношения', icon: '💞' },
       { key: 'money', label: 'Финансы и работа', icon: '💰' },
@@ -29,6 +32,7 @@ export const DECKS = [
     accent: '#b56cff',
     image: 'sola',
     data: SHADOW,
+    full: FULL_SHADOW,
     spheres: [
       { key: 'relations', label: 'Преграды в отношениях', icon: '⛓️' },
       { key: 'shadow', label: 'Моя тень', icon: '🌑' },
@@ -51,7 +55,8 @@ export function readCard(deck, card, reversed) {
       label: s.label,
       icon: s.icon,
       text: set[s.key] || '—'
-    }))
+    })),
+    full: deck.full?.[card.name_short]?.[orient] || ''
   }
 }
 

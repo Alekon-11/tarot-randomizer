@@ -11,10 +11,11 @@ const props = defineProps({
 
 const imgError = ref(false)
 const copyState = ref('') // '', 'busy', 'copied', 'saved', 'err'
+const showFull = ref(false)
 
 watch(
-  () => [props.card?.name_short, props.deck?.id],
-  () => { imgError.value = false }
+  () => [props.card?.name_short, props.deck?.id, props.reversed],
+  () => { imgError.value = false; showFull.value = false }
 )
 
 const reading = computed(() => readCard(props.deck, props.card, props.reversed))
@@ -130,6 +131,21 @@ async function onCopy() {
           <h3 class="sphere__label"><span class="sphere__icon">{{ s.icon }}</span>{{ s.label }}</h3>
           <p class="sphere__text">{{ s.text }}</p>
         </div>
+      </div>
+
+      <div v-if="reading.full" class="full">
+        <button
+          class="full__toggle"
+          type="button"
+          :aria-expanded="showFull"
+          @click="showFull = !showFull"
+        >
+          <span class="full__chevron" :class="{ open: showFull }">▸</span>
+          Полная трактовка
+        </button>
+        <Transition name="expand">
+          <p v-if="showFull" class="full__text">{{ reading.full }}</p>
+        </Transition>
       </div>
     </div>
   </article>
@@ -250,6 +266,38 @@ async function onCopy() {
 }
 .sphere__icon { font-size: 1rem; }
 .sphere__text { margin: 0; line-height: 1.6; color: #ded7ef; font-size: 1rem; }
+
+/* Полная трактовка (раскрывающаяся) */
+.full { margin-top: 1.1rem; }
+.full__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.full__toggle:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.full__chevron { transition: transform 0.25s ease; display: inline-block; }
+.full__chevron.open { transform: rotate(90deg); }
+.full__text {
+  margin: 0.8rem 0 0;
+  line-height: 1.7;
+  color: #e2dbf0;
+  font-size: 1.02rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  overflow: hidden;
+}
+.expand-enter-active, .expand-leave-active { transition: opacity 0.25s ease, max-height 0.35s ease; max-height: 600px; }
+.expand-enter-from, .expand-leave-to { opacity: 0; max-height: 0; }
 
 @media (max-width: 720px) {
   .card-display { grid-template-columns: 1fr; gap: 1.6rem; }
