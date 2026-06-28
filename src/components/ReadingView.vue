@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useTarot } from '../composables/useTarot.js'
 import { useHistory } from '../composables/useHistory.js'
 import { useAudio } from '../composables/useAudio.js'
@@ -156,6 +156,12 @@ function setMode(m) {
   reset()
   justShuffled.value = false
 }
+
+// Каждый тип/раскладка — отдельный расклад: при переключении сбрасываем выпавшие карты.
+watch([spreadType, loveLayout], () => {
+  reset()
+  justShuffled.value = false
+})
 
 const hasResult = computed(() => current.value || spread.value.length)
 
