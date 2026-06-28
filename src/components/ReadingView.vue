@@ -6,6 +6,7 @@ import { useAudio } from '../composables/useAudio.js'
 import { useSettings } from '../composables/useSettings.js'
 import { DECKS, DEFAULT_DECK_ID, readCard } from '../data/decks.js'
 import { CLASSIC } from '../data/classicRu.js'
+import { LOVE } from '../data/loveRu.js'
 import CardDisplay from './CardDisplay.vue'
 import CardModal from './CardModal.vue'
 
@@ -38,8 +39,15 @@ const SPREADS = {
   }
 }
 
-const mode = ref('single') // 'single' | 'three'
+// Любовный расклад: те же 3 карты, но два варианта позиций.
+const LOVE_LAYOUTS = {
+  ppf: { name: 'Прошлое · Настоящее · Будущее', labels: ['Прошлое', 'Настоящее', 'Будущее'] },
+  fta: { name: 'Чувства · Мысли · Действия', labels: ['Чувства', 'Мысли', 'Действия'] }
+}
+
+const mode = ref('single') // 'single' | 'three' | 'love'
 const spreadType = ref('ppf')
+const loveLayout = ref('ppf')
 const selectedDeckId = ref(DEFAULT_DECK_ID)
 const question = ref('')
 
@@ -55,6 +63,28 @@ const selectedDeck = computed(
   () => DECKS.find((d) => d.id === selectedDeckId.value) || DECKS[0]
 )
 const positions = computed(() => SPREADS[spreadType.value].positions)
+const layoutName = computed(() =>
+  mode.value === 'love' ? LOVE_LAYOUTS[loveLayout.value].name : SPREADS[spreadType.value].name
+)
+const posLabels = computed(() =>
+  mode.value === 'love'
+    ? LOVE_LAYOUTS[loveLayout.value].labels
+    : SPREADS[spreadType.value].positions.map((p) => p.label)
+)
+
+function isPersonCard(card) {
+  return card.type === 'major' || [11, 12, 13, 14].includes(card.value_int)
+}
+// Комбинированный любовный текст: развёрнутая любовь + события + (личность — для старших и карт-людей).
+function loveText(item) {
+  const o = item.reversed ? 'rev' : 'up'
+  const s = item.card.name_short
+  const parts = []
+  if (LOVE[s]?.[o]) parts.push(LOVE[s][o])
+  if (CLASSIC[s]?.[o]?.events) parts.push(CLASSIC[s][o].events)
+  if (isPersonCard(item.card) && CLASSIC[s]?.[o]?.person) parts.push(CLASSIC[s][o].person)
+  return parts.join(' ')
+}
 
 function reset() {
   current.value = null
@@ -78,10 +108,10 @@ function recordHistory() {
   } else if (spread.value.length) {
     add({
       ...base,
-      kind: SPREADS[spreadType.value].name,
+      kind: (mode.value === 'love' ? 'Любовный · ' : '') + layoutName.value,
       deck: classicDeck.name,
       cards: spread.value.map((it, i) => ({
-        pos: positions.value[i].label,
+        pos: posLabels.value[i],
         name: it.card.ru?.ru || it.card.name,
         reversed: it.reversed
       }))
@@ -144,12 +174,23 @@ function openSpreadCard(item, label) {
       <button class="mode__btn" :class="{ active: mode === 'three' }" type="button" @click="setMode('three')">
         Три карты
       </button>
+      <button class="mode__btn" :class="{ active: mode === 'love' }" type="button" @click="setMode('love')">
+        💞 Любовный
+      </button>
     </div>
 
     <!-- Тип расклада из 3 карт -->
     <div v-if="mode === 'three'" class="spread-select">
       <label v-for="(s, key) in SPREADS" :key="key" class="spread-opt" :class="{ active: spreadType === key }">
         <input type="radio" :value="key" v-model="spreadType" />
+        {{ s.name }}
+      </label>
+    </div>
+
+    <!-- Раскладка любовного расклада -->
+    <div v-else-if="mode === 'love'" class="spread-select">
+      <label v-for="(s, key) in LOVE_LAYOUTS" :key="key" class="spread-opt" :class="{ active: loveLayout === key }">
+        <input type="radio" :value="key" v-model="loveLayout" />
         {{ s.name }}
       </label>
     </div>
@@ -172,7 +213,11 @@ function openSpreadCard(item, label) {
         </span>
       </button>
     </section>
-    <p v-else class="deck-note">Расклады из трёх карт используют классическую колоду (Райдер–Уэйт).</p>
+    <p v-else class="deck-note">
+      {{ mode === 'love'
+        ? 'Любовный расклад: 3 карты классической колоды с развёрнутой трактовкой по любви.'
+        : 'Расклады из трёх карт используют классическую колоду (Райдер–Уэйт).' }}
+    </p>
 
     <!-- Вопрос -->
     <div class="question">
@@ -244,6 +289,27 @@ function openSpreadCard(item, label) {
               <p class="spread-cell__text">{{ cellSphereText(item, positions[i].sphere) }}</p>
               <span class="spread-cell__more">Подробнее →</span>
             </button>
+          </div>
+          <!-- Любовный расклад -->
+          <div v-else-if="mode === 'love' && spread.length" class="love-spread" :key="'l' + flipKey">
+            <article v-for="(item, i) in spread" :key="i" class="love-row">
+              <div class="love-row__visual">
+                <span class="love-row__pos">{{ posLabels[i] }}</span>
+                <div class="love-row__frame" :class="{ reversed: item.reversed }">
+                  <img :src="item.card.images.rws.url" :alt="item.card.ru?.ru" class="love-row__img" />
+                </div>
+              </div>
+              <div class="love-row__body">
+                <h3 class="love-row__name">
+                  {{ item.card.ru?.ru || item.card.name }}
+                  <span class="love-row__rev">{{ item.reversed ? '↧ перевёрнутая' : '↥ прямая' }}</span>
+                </h3>
+                <ul class="love-row__kw">
+                  <li v-for="kw in (item.card.ru?.kw || [])" :key="kw">{{ kw }}</li>
+                </ul>
+                <p class="love-row__text">{{ loveText(item) }}</p>
+              </div>
+            </article>
           </div>
           <!-- Пусто -->
           <div v-else class="placeholder" key="placeholder">
@@ -482,6 +548,51 @@ function openSpreadCard(item, label) {
   background: rgba(179, 136, 255, 0.13); color: #cbb6ff; border: 1px solid rgba(179, 136, 255, 0.3);
 }
 .spread-cell__text { margin: 0; font-size: 0.92rem; line-height: 1.5; color: #d7d0ea; }
+
+/* Любовный расклад — строки с развёрнутым текстом */
+.love-spread { display: flex; flex-direction: column; gap: 1.1rem; }
+.love-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 1.4rem;
+  align-items: start;
+  background: rgba(255, 110, 156, 0.05);
+  border: 1px solid rgba(255, 110, 156, 0.18);
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem;
+  animation: cellIn 0.5s ease both;
+}
+.love-row:nth-child(2) { animation-delay: 0.1s; }
+.love-row:nth-child(3) { animation-delay: 0.2s; }
+.love-row__visual { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.love-row__pos {
+  font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: #ff9cbb; text-align: center;
+}
+.love-row__frame {
+  width: 140px; aspect-ratio: 600 / 1024; border-radius: 10px; overflow: hidden;
+  background: #1a1430; box-shadow: 0 0 0 1.5px rgba(212, 175, 55, 0.5), 0 10px 26px -14px rgba(0, 0, 0, 0.85);
+  transition: transform 0.5s ease;
+}
+.love-row__frame.reversed { transform: rotate(180deg); }
+.love-row__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.love-row__name {
+  margin: 0 0 0.4rem; font-family: 'Georgia', serif; font-size: 1.3rem; color: #fff;
+}
+.love-row__rev { font-size: 0.82rem; color: #9a90bd; font-family: 'Segoe UI', sans-serif; }
+.love-row__kw {
+  list-style: none; display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0; margin: 0 0 0.7rem;
+}
+.love-row__kw li {
+  font-size: 0.74rem; padding: 0.2rem 0.55rem; border-radius: 6px;
+  background: rgba(255, 110, 156, 0.13); color: #ff9cbb; border: 1px solid rgba(255, 110, 156, 0.3);
+}
+.love-row__text { margin: 0; line-height: 1.65; color: #e2dbf0; font-size: 1rem; }
+
+@media (max-width: 560px) {
+  .love-row { grid-template-columns: 1fr; }
+  .love-row__visual { max-width: 160px; margin: 0 auto; }
+}
 
 .shuffle-anim {
   display: flex; flex-direction: column; align-items: center; justify-content: center;

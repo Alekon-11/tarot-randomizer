@@ -106,6 +106,7 @@ onMounted(() => {
   margin: 0 auto;
   filter: drop-shadow(0 0 30px rgba(255, 209, 138, 0.5));
   animation: logoGlow 4.5s ease-in-out infinite;
+  margin-bottom: 30px;
 }
 @keyframes logoGlow {
   0%, 100% { filter: drop-shadow(0 0 30px rgba(255, 209, 138, 0.5)); }
